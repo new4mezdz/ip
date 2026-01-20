@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS云服务 - IP分发端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app" v-cloak>
+        <!-- 导航栏 -->
+        <nav class="bg-white shadow-sm sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i class="ri-cloud-line text-2xl text-blue-600 mr-2"></i>
+                        <span class="text-xl font-bold text-gray-800">c505NAS云服务</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="#products" class="text-gray-600 hover:text-blue-600">产品</a>
+                        <a href="#docs" class="text-gray-600 hover:text-blue-600">文档</a>
+                        <template v-if="!user">
+                            <button @click="showLogin = true" class="text-gray-600 hover:text-blue-600">登录</button>
+                            <button @click="showRegister = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">注册</button>
+                        </template>
+                        <template v-else>
+                            <span class="text-gray-600">{{ user.username }}</span>
+                            <button @click="goToDashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <i class="ri-dashboard-line mr-1"></i>控制台
+                            </button>
+                            <button @click="logout" class="text-gray-600 hover:text-red-600">退出</button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero区域 -->
+        <section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6">云存储解决方案</h1>
+                <p class="text-xl text-blue-100 mb-8">安全、便捷、随时随地访问您的数据</p>
+                <div class="flex justify-center space-x-4">
+                    <button @click="showRegister = true" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100">
+                        立即激活
+                    </button>
+                    <a href="#docs" class="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600">
+                        查看文档
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 产品特性 -->
+        <section id="products" class="py-16">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">产品特性</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="ri-shield-check-line text-2xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">安全可靠</h3>
+                        <p class="text-gray-600">端到端加密，数据始终存储在您自己的设备上</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="ri-global-line text-2xl text-green-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">远程访问</h3>
+                        <p class="text-gray-600">专属域名，随时随地通过公网访问您的NAS</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="ri-settings-3-line text-2xl text-purple-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">简单易用</h3>
+                        <p class="text-gray-600">开箱即用，无需复杂配置，一键激活</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 文档下载 -->
+        <section id="docs" class="py-16 bg-gray-100">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">文档下载</h2>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div v-if="docs.length === 0" class="p-8 text-center text-gray-500">
+                        暂无文档
+                    </div>
+                    <div v-else class="divide-y">
+                        <div v-for="doc in docs" :key="doc.name" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                            <div class="flex items-center">
+                                <i class="ri-file-text-line text-2xl text-gray-400 mr-3"></i>
+                                <div>
+                                    <div class="font-medium">{{ doc.name }}</div>
+                                    <div class="text-sm text-gray-500">{{ formatSize(doc.size) }}</div>
+                                </div>
+                            </div>
+                            <a :href="'/api/public/docs/download/' + doc.name" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <i class="ri-download-line mr-1"></i>下载
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 登录弹窗 -->
+        <div v-if="showLogin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">用户登录</h3>
+                    <button @click="showLogin = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="login">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input v-model="loginForm.username" type="text" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input v-model="loginForm.password" type="password" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div v-if="loginError" class="mb-4 text-red-500 text-sm">{{ loginError }}</div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        登录
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 注册弹窗 -->
+        <div v-if="showRegister" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">激活设备</h3>
+                    <button @click="showRegister = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="register">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">产品序列号</label>
+                        <input v-model="registerForm.product_sn" type="text" required placeholder="在设备底部查看"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input v-model="registerForm.username" type="text" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input v-model="registerForm.password" type="password" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">邮箱（选填）</label>
+                        <input v-model="registerForm.email" type="email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div v-if="registerError" class="mb-4 text-red-500 text-sm">{{ registerError }}</div>
+                    <div v-if="registerSuccess" class="mb-4 text-green-500 text-sm">{{ registerSuccess }}</div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        激活
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="bg-gray-800 text-gray-400 py-8">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p>&copy; 2024 NAS云服务. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const docs = ref([]);
+                const showLogin = ref(false);
+                const showRegister = ref(false);
+                const loginForm = ref({ username: '', password: '' });
+                const registerForm = ref({ product_sn: '', username: '', password: '', email: '' });
+                const loginError = ref('');
+                const registerError = ref('');
+                const registerSuccess = ref('');
+
+                const checkAuth = () => {
+                    const token = localStorage.getItem('token');
+                    const savedUser = localStorage.getItem('user');
+                    if (token && savedUser) {
+                        user.value = JSON.parse(savedUser);
+                    }
+                };
+
+                const loadDocs = async () => {
+                    try {
+                        const res = await fetch('/api/public/docs');
+                        const data = await res.json();
+                        if (data.success) {
+                            docs.value = data.data;
+                        }
+                    } catch (e) {
+                        console.error('加载文档失败:', e);
+                    }
+                };
+
+                const login = async () => {
+                    loginError.value = '';
+                    try {
+                        const res = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginForm.value)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            localStorage.setItem('token', data.data.token);
+                            localStorage.setItem('user', JSON.stringify(data.data));
+                            user.value = data.data;
+                            showLogin.value = false;
+                        } else {
+                            loginError.value = data.error;
+                        }
+                    } catch (e) {
+                        loginError.value = '登录失败，请重试';
+                    }
+                };
+
+                const register = async () => {
+                    registerError.value = '';
+                    registerSuccess.value = '';
+                    try {
+                        const res = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(registerForm.value)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            registerSuccess.value = `激活成功！您的访问域名: ${data.data.domain}`;
+                            localStorage.setItem('token', data.data.token);
+                            localStorage.setItem('user', JSON.stringify(data.data));
+                            user.value = data.data;
+                            setTimeout(() => {
+                                showRegister.value = false;
+                            }, 2000);
+                        } else {
+                            registerError.value = data.error;
+                        }
+                    } catch (e) {
+                        registerError.value = '注册失败，请重试';
+                    }
+                };
+
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    user.value = null;
+                };
+
+                const goToDashboard = () => {
+                    window.location.href = '/dashboard.html';
+                };
+
+                const formatSize = (bytes) => {
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+                };
+
+                onMounted(() => {
+                    checkAuth();
+                    loadDocs();
+                });
+
+                return {
+                    user, docs, showLogin, showRegister,
+                    loginForm, registerForm, loginError, registerError, registerSuccess,
+                    login, register, logout, goToDashboard, formatSize
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
