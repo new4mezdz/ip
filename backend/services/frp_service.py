@@ -15,28 +15,27 @@ from config import (
 class FRPService:
     """FRP服务管理类"""
 
-    FRPS_CONFIG_PATH = os.path.join(BASE_DIR, "frps.ini")
+    FRPS_CONFIG_PATH = os.path.join(BASE_DIR, "frps.toml")
 
     @staticmethod
     def generate_frps_config():
         """生成frps配置文件"""
-        config = f"""[common]
-bind_port = {FRPS_PORT}
-vhost_http_port = {FRPS_HTTP_PORT}
-dashboard_port = {FRPS_DASHBOARD_PORT}
-dashboard_user = admin
-dashboard_pwd = admin123
-token = {FRP_TOKEN}
-subdomain_host = {BASE_DOMAIN}
-log_file = ./frps.log
-log_level = info
-log_max_days = 3
-"""
+        config = f"""bindPort = {FRPS_PORT}
+    vhostHTTPPort = {FRPS_HTTP_PORT}
+    webServer.addr = "0.0.0.0"
+    webServer.port = {FRPS_DASHBOARD_PORT}
+    webServer.user = "admin"
+    webServer.password = "admin123"
+    auth.token = "{FRP_TOKEN}"
+    subDomainHost = "{BASE_DOMAIN}"
+    log.to = "./frps.log"
+    log.level = "info"
+    log.maxDays = 3
+    """
         with open(FRPService.FRPS_CONFIG_PATH, 'w') as f:
             f.write(config)
         print(f"✅ frps配置已生成: {FRPService.FRPS_CONFIG_PATH}")
         return config
-
     @staticmethod
     def generate_frpc_config(subdomain, server_addr):
         """生成frpc配置（提供给NAS客户端）"""

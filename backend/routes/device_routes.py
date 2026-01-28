@@ -10,7 +10,7 @@ from models import User
 from models.database import get_db
 from services import FRPService, login_required
 from config import BASE_DOMAIN, FRP_TOKEN, FRPS_PORT
-
+from services.nas_center_service import NASCenterService
 device_bp = Blueprint('device', __name__, url_prefix='/api/device')
 
 
@@ -150,5 +150,22 @@ def get_frp_config():
             'config': frpc_config,
             'subdomain': user['subdomain'],
             'domain': f"{user['subdomain']}.{BASE_DOMAIN}"
+        }
+    })
+
+
+@device_bp.route('/nas-center/status', methods=['GET'])
+@login_required
+def get_nas_center_status():
+    """获取 NAS 管理端状态"""
+    status = NASCenterService.get_system_status()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'nas_center_online': status['online'],
+            'total_nodes': status['total_nodes'],
+            'online_nodes': status['online_nodes'],
+            'offline_nodes': status['offline_nodes']
         }
     })

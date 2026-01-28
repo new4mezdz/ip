@@ -32,6 +32,10 @@ class FlaskConfig:
     SESSION_COOKIE_SECURE = False  # 生产环境改为True
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
+
+# ==================== NAS 管理端配置 ====================
+NAS_CENTER_URL = "http://192.168.68.108:8080"  # NAS 管理端地址
+NAS_SHARED_SECRET = "your-shared-secret-key"   # 与 NAS 管理端一致的密钥
 # ==================== FRP配置模板 ====================
 FRPC_CONFIG_TEMPLATE = """
 [common]
