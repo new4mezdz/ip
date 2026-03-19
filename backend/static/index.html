@@ -13,6 +13,24 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div id="app" v-cloak>
+        <!-- Toast 通知 -->
+        <div class="fixed top-4 right-4 z-[100] space-y-2">
+            <div v-for="toast in toasts" :key="toast.id"
+                 class="px-4 py-3 rounded-lg shadow-lg text-white text-sm flex items-center min-w-[260px]"
+                 :class="{
+                     'bg-green-500': toast.type === 'success',
+                     'bg-red-500': toast.type === 'error',
+                     'bg-blue-500': toast.type === 'info'
+                 }">
+                <i class="mr-2" :class="{
+                    'ri-check-circle-line': toast.type === 'success',
+                    'ri-error-warning-line': toast.type === 'error',
+                    'ri-information-line': toast.type === 'info'
+                }"></i>
+                {{ toast.message }}
+            </div>
+        </div>
+
         <!-- 导航栏 -->
         <nav class="bg-white shadow-sm sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,21 +39,42 @@
                         <i class="ri-cloud-line text-2xl text-blue-600 mr-2"></i>
                         <span class="text-xl font-bold text-gray-800">c505NAS云服务</span>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="#products" class="text-gray-600 hover:text-blue-600">产品</a>
-                        <a href="#docs" class="text-gray-600 hover:text-blue-600">文档</a>
+                    <!-- 桌面端导航 -->
+                    <div class="hidden md:flex items-center space-x-4">
+                        <a href="#products" class="text-gray-600 hover:text-blue-600 transition">产品</a>
+                        <a href="#docs" class="text-gray-600 hover:text-blue-600 transition">文档</a>
                         <template v-if="!user">
-                            <button @click="showLogin = true" class="text-gray-600 hover:text-blue-600">登录</button>
-                            <button @click="showRegister = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">注册</button>
+                            <button @click="showLogin = true" class="text-gray-600 hover:text-blue-600 transition">登录</button>
+                            <button @click="showRegister = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">注册</button>
                         </template>
                         <template v-else>
                             <span class="text-gray-600">{{ user.username }}</span>
-                            <button @click="goToDashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            <button @click="goToDashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                                 <i class="ri-dashboard-line mr-1"></i>控制台
                             </button>
-                            <button @click="logout" class="text-gray-600 hover:text-red-600">退出</button>
+                            <button @click="logout" class="text-gray-600 hover:text-red-600 transition">退出</button>
                         </template>
                     </div>
+                    <!-- 移动端汉堡按钮 -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden flex items-center text-gray-600 hover:text-blue-600">
+                        <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- 移动端菜单 -->
+            <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t shadow-lg">
+                <div class="px-4 py-3 space-y-3">
+                    <a href="#products" @click="mobileMenuOpen = false" class="block text-gray-600 hover:text-blue-600">产品</a>
+                    <a href="#docs" @click="mobileMenuOpen = false" class="block text-gray-600 hover:text-blue-600">文档</a>
+                    <template v-if="!user">
+                        <button @click="showLogin = true; mobileMenuOpen = false" class="block w-full text-left text-gray-600 hover:text-blue-600">登录</button>
+                        <button @click="showRegister = true; mobileMenuOpen = false" class="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-center">注册</button>
+                    </template>
+                    <template v-else>
+                        <div class="text-gray-600">{{ user.username }}</div>
+                        <button @click="goToDashboard" class="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-center">控制台</button>
+                        <button @click="logout" class="block w-full text-left text-red-600">退出</button>
+                    </template>
                 </div>
             </div>
         </nav>
@@ -46,10 +85,10 @@
                 <h1 class="text-4xl md:text-5xl font-bold mb-6">云存储解决方案</h1>
                 <p class="text-xl text-blue-100 mb-8">安全、便捷、随时随地访问您的数据</p>
                 <div class="flex justify-center space-x-4">
-                    <button @click="showRegister = true" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100">
+                    <button @click="showRegister = true" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                         立即激活
                     </button>
-                    <a href="#docs" class="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600">
+                    <a href="#docs" class="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition">
                         查看文档
                     </a>
                 </div>
@@ -60,22 +99,34 @@
         <section id="products" class="py-16">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">产品特性</h2>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                <!-- 动态产品（从API加载） -->
+                <div v-if="products.length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div v-for="product in products" :key="product.id" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="ri-box-3-line text-2xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">{{ product.name }}</h3>
+                        <p class="text-gray-600 mb-3">{{ product.description }}</p>
+                        <div v-if="product.price" class="text-blue-600 font-semibold">¥{{ product.price }}</div>
+                    </div>
+                </div>
+                <!-- 默认特性卡片（无产品数据时） -->
+                <div v-else class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
                         <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                             <i class="ri-shield-check-line text-2xl text-blue-600"></i>
                         </div>
                         <h3 class="text-xl font-semibold mb-2">安全可靠</h3>
                         <p class="text-gray-600">端到端加密，数据始终存储在您自己的设备上</p>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                             <i class="ri-global-line text-2xl text-green-600"></i>
                         </div>
                         <h3 class="text-xl font-semibold mb-2">远程访问</h3>
                         <p class="text-gray-600">专属域名，随时随地通过公网访问您的NAS</p>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
                         <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                             <i class="ri-settings-3-line text-2xl text-purple-600"></i>
                         </div>
@@ -95,7 +146,7 @@
                         暂无文档
                     </div>
                     <div v-else class="divide-y">
-                        <div v-for="doc in docs" :key="doc.name" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                        <div v-for="doc in docs" :key="doc.name" class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
                             <div class="flex items-center">
                                 <i class="ri-file-text-line text-2xl text-gray-400 mr-3"></i>
                                 <div>
@@ -103,7 +154,7 @@
                                     <div class="text-sm text-gray-500">{{ formatSize(doc.size) }}</div>
                                 </div>
                             </div>
-                            <a :href="'/api/public/docs/download/' + doc.name" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            <a :href="'/api/public/docs/download/' + doc.name" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
                                 <i class="ri-download-line mr-1"></i>下载
                             </a>
                         </div>
@@ -113,7 +164,7 @@
         </section>
 
         <!-- 登录弹窗 -->
-        <div v-if="showLogin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div v-if="showLogin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showLogin = false">
             <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold">用户登录</h3>
@@ -129,19 +180,27 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-                        <input v-model="loginForm.password" type="password" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="relative">
+                            <input v-model="loginForm.password" :type="showLoginPwd ? 'text' : 'password'" required
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button type="button" @click="showLoginPwd = !showLoginPwd"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i :class="showLoginPwd ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
                     </div>
                     <div v-if="loginError" class="mb-4 text-red-500 text-sm">{{ loginError }}</div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
-                        登录
+                    <button type="submit" :disabled="loginLoading"
+                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        <i v-if="loginLoading" class="ri-loader-4-line animate-spin mr-2"></i>
+                        {{ loginLoading ? '登录中...' : '登录' }}
                     </button>
                 </form>
             </div>
         </div>
 
         <!-- 注册弹窗 -->
-        <div v-if="showRegister" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div v-if="showRegister" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showRegister = false">
             <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold">激活设备</h3>
@@ -162,8 +221,14 @@
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-                        <input v-model="registerForm.password" type="password" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="relative">
+                            <input v-model="registerForm.password" :type="showRegPwd ? 'text' : 'password'" required
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button type="button" @click="showRegPwd = !showRegPwd"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i :class="showRegPwd ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">邮箱（选填）</label>
@@ -171,9 +236,10 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div v-if="registerError" class="mb-4 text-red-500 text-sm">{{ registerError }}</div>
-                    <div v-if="registerSuccess" class="mb-4 text-green-500 text-sm">{{ registerSuccess }}</div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
-                        激活
+                    <button type="submit" :disabled="registerLoading"
+                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        <i v-if="registerLoading" class="ri-loader-4-line animate-spin mr-2"></i>
+                        {{ registerLoading ? '激活中...' : '激活' }}
                     </button>
                 </form>
             </div>
@@ -182,7 +248,7 @@
         <!-- 页脚 -->
         <footer class="bg-gray-800 text-gray-400 py-8">
             <div class="max-w-7xl mx-auto px-4 text-center">
-                <p>&copy; 2024 NAS云服务. All rights reserved.</p>
+                <p>&copy; 2025 c505NAS云服务. All rights reserved.</p>
             </div>
         </footer>
     </div>
@@ -194,18 +260,47 @@
             setup() {
                 const user = ref(null);
                 const docs = ref([]);
+                const products = ref([]);
                 const showLogin = ref(false);
                 const showRegister = ref(false);
+                const mobileMenuOpen = ref(false);
                 const loginForm = ref({ username: '', password: '' });
                 const registerForm = ref({ product_sn: '', username: '', password: '', email: '' });
                 const loginError = ref('');
                 const registerError = ref('');
-                const registerSuccess = ref('');
+                const loginLoading = ref(false);
+                const registerLoading = ref(false);
+                const showLoginPwd = ref(false);
+                const showRegPwd = ref(false);
+
+                // Toast 系统
+                const toasts = ref([]);
+                let toastId = 0;
+                const showToast = (message, type = 'info') => {
+                    const id = ++toastId;
+                    toasts.value.push({ id, message, type });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
+                // Token 过期检查
+                const isTokenExpired = (token) => {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        return payload.exp < Date.now() / 1000;
+                    } catch { return true; }
+                };
 
                 const checkAuth = () => {
                     const token = localStorage.getItem('token');
                     const savedUser = localStorage.getItem('user');
                     if (token && savedUser) {
+                        if (isTokenExpired(token)) {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            return;
+                        }
                         user.value = JSON.parse(savedUser);
                     }
                 };
@@ -222,8 +317,21 @@
                     }
                 };
 
+                const loadProducts = async () => {
+                    try {
+                        const res = await fetch('/api/public/products');
+                        const data = await res.json();
+                        if (data.success && data.data.length > 0) {
+                            products.value = data.data;
+                        }
+                    } catch (e) {
+                        console.error('加载产品失败:', e);
+                    }
+                };
+
                 const login = async () => {
                     loginError.value = '';
+                    loginLoading.value = true;
                     try {
                         const res = await fetch('/api/auth/login', {
                             method: 'POST',
@@ -236,17 +344,20 @@
                             localStorage.setItem('user', JSON.stringify(data.data));
                             user.value = data.data;
                             showLogin.value = false;
+                            showToast('登录成功', 'success');
                         } else {
                             loginError.value = data.error;
                         }
                     } catch (e) {
-                        loginError.value = '登录失败，请重试';
+                        showToast('网络连接失败，请检查网络', 'error');
+                    } finally {
+                        loginLoading.value = false;
                     }
                 };
 
                 const register = async () => {
                     registerError.value = '';
-                    registerSuccess.value = '';
+                    registerLoading.value = true;
                     try {
                         const res = await fetch('/api/auth/register', {
                             method: 'POST',
@@ -255,18 +366,20 @@
                         });
                         const data = await res.json();
                         if (data.success) {
-                            registerSuccess.value = `激活成功！您的访问域名: ${data.data.domain}`;
                             localStorage.setItem('token', data.data.token);
                             localStorage.setItem('user', JSON.stringify(data.data));
                             user.value = data.data;
+                            showToast('激活成功！访问域名: ' + data.data.domain, 'success');
                             setTimeout(() => {
                                 showRegister.value = false;
-                            }, 2000);
+                            }, 1500);
                         } else {
                             registerError.value = data.error;
                         }
                     } catch (e) {
-                        registerError.value = '注册失败，请重试';
+                        showToast('网络连接失败，请检查网络', 'error');
+                    } finally {
+                        registerLoading.value = false;
                     }
                 };
 
@@ -274,6 +387,7 @@
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     user.value = null;
+                    showToast('已退出登录', 'info');
                 };
 
                 const goToDashboard = () => {
@@ -289,12 +403,15 @@
                 onMounted(() => {
                     checkAuth();
                     loadDocs();
+                    loadProducts();
                 });
 
                 return {
-                    user, docs, showLogin, showRegister,
-                    loginForm, registerForm, loginError, registerError, registerSuccess,
-                    login, register, logout, goToDashboard, formatSize
+                    user, docs, products, showLogin, showRegister, mobileMenuOpen,
+                    loginForm, registerForm, loginError, registerError,
+                    loginLoading, registerLoading, showLoginPwd, showRegPwd,
+                    toasts,
+                    login, register, logout, goToDashboard, formatSize, showToast
                 };
             }
         }).mount('#app');

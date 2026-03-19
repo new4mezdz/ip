@@ -13,6 +13,24 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div id="app" v-cloak>
+        <!-- Toast 通知 -->
+        <div class="fixed top-4 right-4 z-[100] space-y-2">
+            <div v-for="toast in toasts" :key="toast.id"
+                 class="px-4 py-3 rounded-lg shadow-lg text-white text-sm flex items-center min-w-[260px]"
+                 :class="{
+                     'bg-green-500': toast.type === 'success',
+                     'bg-red-500': toast.type === 'error',
+                     'bg-blue-500': toast.type === 'info'
+                 }">
+                <i class="mr-2" :class="{
+                    'ri-check-circle-line': toast.type === 'success',
+                    'ri-error-warning-line': toast.type === 'error',
+                    'ri-information-line': toast.type === 'info'
+                }"></i>
+                {{ toast.message }}
+            </div>
+        </div>
+
         <!-- 导航栏 -->
         <nav class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,171 +40,319 @@
                             <i class="ri-cloud-line text-2xl text-blue-600 mr-2"></i>
                             <span class="text-xl font-bold text-gray-800">NAS云服务</span>
                         </a>
-                        <span class="ml-4 text-gray-400">|</span>
-                        <span class="ml-4 text-gray-600">控制台</span>
+                        <span class="ml-4 text-gray-400 hidden sm:inline">|</span>
+                        <span class="ml-4 text-gray-600 hidden sm:inline">控制台</span>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <!-- 桌面端 -->
+                    <div class="hidden md:flex items-center space-x-4">
                         <span class="text-gray-600">{{ user?.username }}</span>
-                        <button @click="logout" class="text-gray-600 hover:text-red-600">
+                        <button @click="logout" class="text-gray-600 hover:text-red-600 transition">
                             <i class="ri-logout-box-line mr-1"></i>退出
                         </button>
                     </div>
+                    <!-- 移动端汉堡 -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden flex items-center text-gray-600 hover:text-blue-600">
+                        <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- 移动端菜单 -->
+            <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t shadow-lg">
+                <div class="px-4 py-3 space-y-3">
+                    <div class="text-gray-600">{{ user?.username }}</div>
+                    <a href="/" class="block text-gray-600 hover:text-blue-600">返回首页</a>
+                    <button @click="logout" class="block w-full text-left text-red-600">退出登录</button>
                 </div>
             </div>
         </nav>
 
         <div class="max-w-7xl mx-auto px-4 py-8">
-            <!-- 概览卡片 -->
-            <div class="grid md:grid-cols-3 gap-6 mb-8">
-                <!-- 域名信息 -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-gray-500 text-sm">访问域名</h3>
-                        <i class="ri-global-line text-blue-500"></i>
-                    </div>
-                    <div class="text-lg font-semibold text-gray-800 break-all">
-                        {{ user?.domain || '-' }}
-                    </div>
-                    <a :href="'http://' + user?.domain" target="_blank"
-                       class="text-blue-600 text-sm hover:underline mt-2 inline-block">
-                        <i class="ri-external-link-line mr-1"></i>访问NAS
-                    </a>
-                </div>
-
-                <!-- 设备状态 -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-gray-500 text-sm">FRP隧道</h3>
-                        <i class="ri-server-line text-green-500"></i>
-                    </div>
-                    <div class="flex items-center">
-                        <span :class="profile?.nas_online ? 'bg-green-500' : 'bg-gray-400'"
-                              class="w-3 h-3 rounded-full mr-2"></span>
-                        <span class="text-lg font-semibold" :class="profile?.nas_online ? 'text-green-600' : 'text-gray-500'">
-                            {{ profile?.nas_online ? '在线' : '离线' }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- 账户信息 -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-gray-500 text-sm">账户创建</h3>
-                        <i class="ri-calendar-line text-purple-500"></i>
-                    </div>
-                    <div class="text-lg font-semibold text-gray-800">
-                        {{ formatDate(profile?.created_at) }}
-                    </div>
-                </div>
-                <!-- NAS节点状态 -->
-<div class="bg-white rounded-xl shadow-sm p-6">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-gray-500 text-sm">NAS节点</h3>
-        <i class="ri-computer-line text-orange-500"></i>
-    </div>
-    <div class="flex items-center mb-2">
-        <span :class="nasStatus?.nas_center_online ? 'bg-green-500' : 'bg-red-500'"
-              class="w-3 h-3 rounded-full mr-2"></span>
-        <span class="text-sm" :class="nasStatus?.nas_center_online ? 'text-green-600' : 'text-red-500'">
-            {{ nasStatus?.nas_center_online ? '管理端在线' : '管理端离线' }}
-        </span>
-    </div>
-    <div class="text-lg font-semibold text-gray-800">
-        <span class="text-green-600">{{ nasStatus?.online_nodes || 0 }}</span>
-        <span class="text-gray-400">/</span>
-        <span>{{ nasStatus?.total_nodes || 0 }}</span>
-        <span class="text-sm text-gray-500 ml-1">节点在线</span>
-    </div>
-</div>
-            </div>
-
-            <!-- 详细信息 -->
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- 账户信息 -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold mb-4">
-                        <i class="ri-user-line mr-2 text-blue-600"></i>账户信息
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between py-2 border-b">
-                            <span class="text-gray-500">用户名</span>
-                            <span class="text-gray-800">{{ profile?.username }}</span>
-                        </div>
-                        <div class="flex justify-between py-2 border-b">
-                            <span class="text-gray-500">邮箱</span>
-                            <span class="text-gray-800">{{ profile?.email || '未设置' }}</span>
-                        </div>
-                        <div class="flex justify-between py-2 border-b">
-                            <span class="text-gray-500">子域名</span>
-                            <span class="text-gray-800">{{ profile?.subdomain }}</span>
-                        </div>
-                        <div class="flex justify-between py-2">
-                            <span class="text-gray-500">最后登录</span>
-                            <span class="text-gray-800">{{ formatDate(profile?.last_login) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FRP配置 -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold mb-4">
-                        <i class="ri-settings-3-line mr-2 text-blue-600"></i>FRP配置
-                    </h3>
-                    <p class="text-gray-500 text-sm mb-4">
-                        如需手动配置NAS，请下载以下配置文件
-                    </p>
-                    <div class="bg-gray-100 rounded-lg p-4 mb-4">
-                        <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ frpConfig }}</pre>
-                    </div>
-                    <button @click="downloadFrpConfig" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                        <i class="ri-download-line mr-1"></i>下载配置
+            <!-- 标题栏 + 刷新 -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">控制台概览</h2>
+                <div class="flex items-center text-sm text-gray-500">
+                    <span v-if="lastRefresh">{{ lastRefresh }}</span>
+                    <button @click="refreshData" class="ml-2 text-blue-600 hover:text-blue-800 transition" title="刷新数据">
+                        <i class="ri-refresh-line text-lg" :class="{ 'animate-spin': refreshing }"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- 修改密码 -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-                <h3 class="text-lg font-semibold mb-4">
-                    <i class="ri-lock-line mr-2 text-blue-600"></i>修改密码
-                </h3>
-                <form @submit.prevent="changePassword" class="max-w-md">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">当前密码</label>
-                        <input v-model="passwordForm.old_password" type="password" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <!-- 加载骨架屏 -->
+            <template v-if="loading">
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div v-for="i in 4" :key="i" class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-gray-200 animate-pulse rounded h-4 w-16"></div>
+                            <div class="bg-gray-200 animate-pulse rounded h-5 w-5"></div>
+                        </div>
+                        <div class="bg-gray-200 animate-pulse rounded h-6 w-3/4"></div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
-                        <input v-model="passwordForm.new_password" type="password" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div v-for="i in 2" :key="i" class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-gray-200 animate-pulse rounded h-6 w-32 mb-4"></div>
+                        <div class="space-y-3">
+                            <div v-for="j in 4" :key="j" class="bg-gray-200 animate-pulse rounded h-4 w-full"></div>
+                        </div>
                     </div>
-                    <div v-if="passwordError" class="mb-4 text-red-500 text-sm">{{ passwordError }}</div>
-                    <div v-if="passwordSuccess" class="mb-4 text-green-500 text-sm">{{ passwordSuccess }}</div>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                        修改密码
-                    </button>
-                </form>
-            </div>
+                </div>
+            </template>
+
+            <!-- 主内容 -->
+            <template v-else>
+                <!-- 概览卡片 -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- 域名信息 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm">访问域名</h3>
+                            <i class="ri-global-line text-blue-500"></i>
+                        </div>
+                        <div class="text-lg font-semibold text-gray-800 break-all">
+                            {{ user?.domain || '-' }}
+                        </div>
+                        <a :href="'http://' + user?.domain" target="_blank"
+                           class="text-blue-600 text-sm hover:underline mt-2 inline-block">
+                            <i class="ri-external-link-line mr-1"></i>访问NAS
+                        </a>
+                    </div>
+
+                    <!-- 设备状态 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm">FRP隧道</h3>
+                            <i class="ri-server-line text-green-500"></i>
+                        </div>
+                        <div class="flex items-center">
+                            <span :class="profile?.nas_online ? 'bg-green-500' : 'bg-gray-400'"
+                                  class="w-3 h-3 rounded-full mr-2"></span>
+                            <span class="text-lg font-semibold" :class="profile?.nas_online ? 'text-green-600' : 'text-gray-500'">
+                                {{ profile?.nas_online ? '在线' : '离线' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 账户信息 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm">账户创建</h3>
+                            <i class="ri-calendar-line text-purple-500"></i>
+                        </div>
+                        <div class="text-lg font-semibold text-gray-800">
+                            {{ formatDate(profile?.created_at) }}
+                        </div>
+                    </div>
+
+                    <!-- NAS节点状态 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm">NAS节点</h3>
+                            <i class="ri-computer-line text-orange-500"></i>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <span :class="nasStatus?.nas_center_online ? 'bg-green-500' : 'bg-red-500'"
+                                  class="w-3 h-3 rounded-full mr-2"></span>
+                            <span class="text-sm" :class="nasStatus?.nas_center_online ? 'text-green-600' : 'text-red-500'">
+                                {{ nasStatus?.nas_center_online ? '管理端在线' : '管理端离线' }}
+                            </span>
+                        </div>
+                        <div class="text-lg font-semibold text-gray-800">
+                            <span class="text-green-600">{{ nasStatus?.online_nodes || 0 }}</span>
+                            <span class="text-gray-400">/</span>
+                            <span>{{ nasStatus?.total_nodes || 0 }}</span>
+                            <span class="text-sm text-gray-500 ml-1">节点在线</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详细信息 -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- 账户信息 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">
+                            <i class="ri-user-line mr-2 text-blue-600"></i>账户信息
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="text-gray-500">用户名</span>
+                                <span class="text-gray-800">{{ profile?.username }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="text-gray-500">邮箱</span>
+                                <span class="text-gray-800">{{ profile?.email || '未设置' }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="text-gray-500">子域名</span>
+                                <span class="text-gray-800">{{ profile?.subdomain }}</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span class="text-gray-500">最后登录</span>
+                                <span class="text-gray-800">{{ formatDate(profile?.last_login) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FRP配置 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">
+                            <i class="ri-settings-3-line mr-2 text-blue-600"></i>FRP配置
+                        </h3>
+                        <p class="text-gray-500 text-sm mb-4">
+                            如需手动配置NAS，请下载以下配置文件
+                        </p>
+                        <div class="bg-gray-100 rounded-lg p-4 mb-4 max-h-48 overflow-auto">
+                            <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ frpConfig }}</pre>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button @click="downloadFrpConfig" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                <i class="ri-download-line mr-1"></i>下载配置
+                            </button>
+                            <button @click="copyFrpConfig" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
+                                <i class="ri-file-copy-line mr-1"></i>{{ copied ? '已复制' : '复制配置' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 设备列表 -->
+                <div v-if="devices.length > 0" class="bg-white rounded-xl shadow-sm p-6 mt-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="ri-hard-drive-2-line mr-2 text-blue-600"></i>设备列表
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b text-left text-gray-500">
+                                    <th class="pb-3 font-medium">设备名称</th>
+                                    <th class="pb-3 font-medium">序列号</th>
+                                    <th class="pb-3 font-medium">局域网IP</th>
+                                    <th class="pb-3 font-medium">状态</th>
+                                    <th class="pb-3 font-medium">最后在线</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="device in devices" :key="device.id" class="border-b last:border-0">
+                                    <td class="py-3 text-gray-800">{{ device.device_name || '-' }}</td>
+                                    <td class="py-3 text-gray-600 font-mono text-xs">{{ device.device_sn }}</td>
+                                    <td class="py-3 text-gray-600">{{ device.local_ip || '-' }}</td>
+                                    <td class="py-3">
+                                        <span class="inline-flex items-center">
+                                            <span :class="device.frp_connected ? 'bg-green-500' : 'bg-gray-400'"
+                                                  class="w-2 h-2 rounded-full mr-1.5"></span>
+                                            <span :class="device.frp_connected ? 'text-green-600' : 'text-gray-500'">
+                                                {{ device.frp_connected ? '在线' : '离线' }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="py-3 text-gray-500">{{ formatDate(device.last_online) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 修改密码 -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="ri-lock-line mr-2 text-blue-600"></i>修改密码
+                    </h3>
+                    <form @submit.prevent="changePassword" class="max-w-md">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">当前密码</label>
+                            <div class="relative">
+                                <input v-model="passwordForm.old_password" :type="showOldPwd ? 'text' : 'password'" required
+                                    class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <button type="button" @click="showOldPwd = !showOldPwd"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i :class="showOldPwd ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                            <div class="relative">
+                                <input v-model="passwordForm.new_password" :type="showNewPwd ? 'text' : 'password'" required
+                                    class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <button type="button" @click="showNewPwd = !showNewPwd"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i :class="showNewPwd ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" :disabled="passwordLoading"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <i v-if="passwordLoading" class="ri-loader-4-line animate-spin mr-2"></i>
+                            {{ passwordLoading ? '修改中...' : '修改密码' }}
+                        </button>
+                    </form>
+                </div>
+            </template>
         </div>
     </div>
 
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, onUnmounted } = Vue;
 
         createApp({
             setup() {
                 const user = ref(null);
                 const profile = ref(null);
                 const frpConfig = ref('');
-                const passwordForm = ref({ old_password: '', new_password: '' });
-                const passwordError = ref('');
-                const passwordSuccess = ref('');
                 const nasStatus = ref(null);
+                const devices = ref([]);
+                const passwordForm = ref({ old_password: '', new_password: '' });
+                const passwordLoading = ref(false);
+                const mobileMenuOpen = ref(false);
+                const loading = ref(true);
+                const refreshing = ref(false);
+                const lastRefresh = ref('');
+                const copied = ref(false);
+                const showOldPwd = ref(false);
+                const showNewPwd = ref(false);
 
-                const getAuthHeaders = () => ({
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
-                });
+                // Toast 系统
+                const toasts = ref([]);
+                let toastId = 0;
+                const showToast = (message, type = 'info') => {
+                    const id = ++toastId;
+                    toasts.value.push({ id, message, type });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
+                // Token 过期检查
+                const isTokenExpired = (token) => {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        return payload.exp < Date.now() / 1000;
+                    } catch { return true; }
+                };
+
+                // 带认证的 fetch 封装
+                const apiFetch = async (url, options = {}) => {
+                    const token = localStorage.getItem('token');
+                    if (!token || isTokenExpired(token)) {
+                        showToast('登录已过期，正在跳转...', 'error');
+                        setTimeout(() => { window.location.href = '/'; }, 1500);
+                        throw new Error('token_expired');
+                    }
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                        ...options.headers
+                    };
+                    const res = await fetch(url, { ...options, headers });
+                    if (res.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        showToast('登录已过期，正在跳转...', 'error');
+                        setTimeout(() => { window.location.href = '/'; }, 1500);
+                        throw new Error('unauthorized');
+                    }
+                    return res;
+                };
 
                 const checkAuth = () => {
                     const token = localStorage.getItem('token');
@@ -195,36 +361,68 @@
                         window.location.href = '/';
                         return;
                     }
+                    if (isTokenExpired(token)) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/';
+                        return;
+                    }
                     user.value = JSON.parse(savedUser);
                 };
 
                 const loadProfile = async () => {
                     try {
-                        const res = await fetch('/api/auth/profile', {
-                            headers: getAuthHeaders()
-                        });
+                        const res = await apiFetch('/api/auth/profile');
                         const data = await res.json();
                         if (data.success) {
                             profile.value = data.data;
-                        } else if (res.status === 401) {
-                            logout();
                         }
                     } catch (e) {
-                        console.error('加载用户信息失败:', e);
+                        if (e.message !== 'unauthorized' && e.message !== 'token_expired') {
+                            console.error('加载用户信息失败:', e);
+                        }
                     }
                 };
 
                 const loadFrpConfig = async () => {
                     try {
-                        const res = await fetch('/api/device/frp-config', {
-                            headers: getAuthHeaders()
-                        });
+                        const res = await apiFetch('/api/device/frp-config');
                         const data = await res.json();
                         if (data.success) {
                             frpConfig.value = data.data.config;
                         }
                     } catch (e) {
-                        console.error('加载FRP配置失败:', e);
+                        if (e.message !== 'unauthorized' && e.message !== 'token_expired') {
+                            console.error('加载FRP配置失败:', e);
+                        }
+                    }
+                };
+
+                const loadNasStatus = async () => {
+                    try {
+                        const res = await apiFetch('/api/device/nas-center/status');
+                        const data = await res.json();
+                        if (data.success) {
+                            nasStatus.value = data.data;
+                        }
+                    } catch (e) {
+                        if (e.message !== 'unauthorized' && e.message !== 'token_expired') {
+                            console.error('获取NAS状态失败:', e);
+                        }
+                    }
+                };
+
+                const loadDevices = async () => {
+                    try {
+                        const res = await apiFetch('/api/device/status');
+                        const data = await res.json();
+                        if (data.success) {
+                            devices.value = data.data;
+                        }
+                    } catch (e) {
+                        if (e.message !== 'unauthorized' && e.message !== 'token_expired') {
+                            console.error('获取设备列表失败:', e);
+                        }
                     }
                 };
 
@@ -238,24 +436,46 @@
                     URL.revokeObjectURL(url);
                 };
 
-                const changePassword = async () => {
-                    passwordError.value = '';
-                    passwordSuccess.value = '';
+                const copyFrpConfig = async () => {
                     try {
-                        const res = await fetch('/api/auth/change-password', {
+                        await navigator.clipboard.writeText(frpConfig.value);
+                        copied.value = true;
+                        showToast('配置已复制到剪贴板', 'success');
+                        setTimeout(() => { copied.value = false; }, 2000);
+                    } catch {
+                        // fallback
+                        const ta = document.createElement('textarea');
+                        ta.value = frpConfig.value;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        copied.value = true;
+                        showToast('配置已复制到剪贴板', 'success');
+                        setTimeout(() => { copied.value = false; }, 2000);
+                    }
+                };
+
+                const changePassword = async () => {
+                    passwordLoading.value = true;
+                    try {
+                        const res = await apiFetch('/api/auth/change-password', {
                             method: 'POST',
-                            headers: getAuthHeaders(),
                             body: JSON.stringify(passwordForm.value)
                         });
                         const data = await res.json();
                         if (data.success) {
-                            passwordSuccess.value = '密码修改成功';
+                            showToast('密码修改成功', 'success');
                             passwordForm.value = { old_password: '', new_password: '' };
                         } else {
-                            passwordError.value = data.error;
+                            showToast(data.error || '修改失败', 'error');
                         }
                     } catch (e) {
-                        passwordError.value = '修改失败，请重试';
+                        if (e.message !== 'unauthorized' && e.message !== 'token_expired') {
+                            showToast('网络连接失败，请检查网络', 'error');
+                        }
+                    } finally {
+                        passwordLoading.value = false;
                     }
                 };
 
@@ -265,37 +485,49 @@
                     window.location.href = '/';
                 };
 
-
-                const loadNasStatus = async () => {
-    try {
-        const res = await fetch('/api/device/nas-center/status', {
-            headers: getAuthHeaders()
-        });
-        const data = await res.json();
-        if (data.success) {
-            nasStatus.value = data.data;
-        }
-    } catch (e) {
-        console.error('获取NAS状态失败:', e);
-    }
-};
                 const formatDate = (dateStr) => {
                     if (!dateStr) return '-';
                     return new Date(dateStr).toLocaleString('zh-CN');
                 };
 
-                onMounted(() => {
+                const updateRefreshTime = () => {
+                    lastRefresh.value = new Date().toLocaleTimeString('zh-CN');
+                };
+
+                // 刷新数据（静默，不显示骨架屏）
+                const refreshData = async () => {
+                    refreshing.value = true;
+                    await Promise.all([loadProfile(), loadNasStatus(), loadDevices()]);
+                    updateRefreshTime();
+                    refreshing.value = false;
+                };
+
+                // 自动刷新定时器
+                let refreshInterval = null;
+
+                onMounted(async () => {
                     checkAuth();
-                    loadProfile();
-                    loadFrpConfig();
-                    loadNasStatus();
+                    loading.value = true;
+                    await Promise.all([loadProfile(), loadFrpConfig(), loadNasStatus(), loadDevices()]);
+                    updateRefreshTime();
+                    loading.value = false;
+
+                    // 每30秒自动刷新状态
+                    refreshInterval = setInterval(refreshData, 30000);
+                });
+
+                onUnmounted(() => {
+                    if (refreshInterval) clearInterval(refreshInterval);
                 });
 
                 return {
-                    user, profile, frpConfig, passwordForm,
-                    passwordError, passwordSuccess,
-                    nasStatus,
-                    downloadFrpConfig, changePassword, logout, formatDate
+                    user, profile, frpConfig, nasStatus, devices,
+                    passwordForm, passwordLoading,
+                    mobileMenuOpen, loading, refreshing, lastRefresh,
+                    copied, showOldPwd, showNewPwd,
+                    toasts,
+                    downloadFrpConfig, copyFrpConfig, changePassword,
+                    logout, formatDate, refreshData, showToast
                 };
             }
         }).mount('#app');
