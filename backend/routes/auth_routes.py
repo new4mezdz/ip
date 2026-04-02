@@ -88,7 +88,7 @@ def login():
             'user_id': user['id'],
             'username': user['username'],
             'subdomain': user['subdomain'],
-            'domain': f"{user['subdomain']}.{BASE_DOMAIN}",
+            'domain': user.get('custom_domain') or f"{user['subdomain']}.{BASE_DOMAIN}",
             'token': token
         }
     })
@@ -113,7 +113,7 @@ def get_profile():
             'email': user['email'],
             'phone': user['phone'],
             'subdomain': user['subdomain'],
-            'domain': f"{user['subdomain']}.{BASE_DOMAIN}",
+            'domain': user.get('custom_domain') or f"{user['subdomain']}.{BASE_DOMAIN}",
             'nas_online': is_online,
             'created_at': user['created_at'],
             'last_login': user['last_login']

@@ -73,7 +73,7 @@ class User:
         password_hash = User.hash_password(password)
 
         cursor.execute('''
-            SELECT id, username, subdomain, frp_port, status
+            SELECT id, username, subdomain, frp_port, status, custom_domain
             FROM users WHERE username = ? AND password_hash = ?
         ''', (username, password_hash))
 

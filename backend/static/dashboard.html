@@ -47,7 +47,7 @@
                     <div class="text-lg font-semibold text-gray-800 break-all">
                         {{ user?.domain || '-' }}
                     </div>
-                    <a :href="'http://' + user?.domain" target="_blank"
+                    <a :href="user?.domain?.startsWith('http') ? user?.domain : 'http://' + user?.domain" target="_blank"
                        class="text-blue-600 text-sm hover:underline mt-2 inline-block">
                         <i class="ri-external-link-line mr-1"></i>访问NAS
                     </a>
